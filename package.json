@@ -1,0 +1,42 @@
+{
+  "name": "hub-api",
+  "version": "0.0.1",
+  "description": "Home hub api",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "babel src --out-dir dist",
+    "start": "npm run build && node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/Home/hub-api.git"
+  },
+  "author": "Seth Lessard",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "express": "4.17.1",
+    "helmet": "3.21.2",
+    "lowdb": "1.0.0",
+    "morgan": "1.9.1",
+    "node-ssdp": "4.0.0",
+    "node-wifi": "2.0.12",
+    "request": "2.88.0",
+    "uuid": "3.3.3",
+    "winston-express": "0.1.1",
+    "xml2js": "0.4.23"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.7.7",
+    "@babel/core": "7.7.7",
+    "@babel/node": "7.7.7",
+    "@babel/plugin-proposal-class-properties": "7.7.4",
+    "@babel/preset-env": "7.7.7",
+    "@babel/register": "7.7.7",
+    "gulp": "4.0.2",
+    "gulp-babel": "8.0.0",
+    "gulp-inject-string": "1.1.2",
+    "gulp-sourcemaps": "2.6.5",
+    "rimraf": "3.0.0"
+  }
+}
