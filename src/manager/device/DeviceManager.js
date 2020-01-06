@@ -1,6 +1,6 @@
 //@ts-check
-import DeviceDatabase, { getDeviceDatabaseInstance } from "../db/DeviceDatabase";
-import IoTDevice, { iotDeviceFromJson } from "../model/IoTDevice";
+import DeviceDatabase, { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
+import IoTDevice, { iotDeviceFromJson } from "../../model/IoTDevice";
 
 let instance = null;
 

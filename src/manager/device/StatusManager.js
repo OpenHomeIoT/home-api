@@ -1,16 +1,16 @@
-import ConnectionBufferDatabase, { getConnectionBufferDatabaseInstance } from "../db/ConnectionBufferDatabase";
-import DeviceOnlineOfflineHistoryDatabase, { getDeviceOnlineOfflineHistoryDatabaseInstance } from "../db/DeviceOnlineOfflineHistoryDatabase";
+import ConnectionBufferDatabase, { getConnectionBufferDatabaseInstance } from "../../db/ConnectionBufferDatabase";
+import DeviceOnlineOfflineHistoryDatabase, { getDeviceOnlineOfflineHistoryDatabaseInstance } from "../../db/DeviceOnlineOfflineHistoryDatabase";
 import DeviceManager, { getDeviceManagerInstance } from "./DeviceManager";
 
 let instance = null;
 
-const getDeviceStatusManagerInstance = () => {
+const getStatusManagerInstance = () => {
   if (instance == null)
-    instance = new DeviceStatusManager(getDeviceOnlineOfflineHistoryDatabaseInstance(), getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
+    instance = new StatusManager(getDeviceOnlineOfflineHistoryDatabaseInstance(), getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
   return instance;
 }
 
-class DeviceStatusManager {
+class StatusManager {
 
   /**
    *
@@ -87,5 +87,5 @@ class DeviceStatusManager {
   }
 }
 
-export default DeviceStatusManager;
-export { getDeviceStatusManagerInstance };
+export default StatusManager;
+export { getStatusManagerInstance };

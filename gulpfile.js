@@ -5,7 +5,7 @@ const build = require("./task/build");
 const db = require("./task/db");
 
 task("clean", function(done) {
-  rimraf("./dist", done);
+  rimraf("./build", done);
 });
 task("clean:db", db.cleanDatabases);
 task("build:dev", series("clean", db.makeDBDirectory, build.developBuild));

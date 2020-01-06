@@ -1,5 +1,6 @@
 import wifi from "node-wifi";
 import WifiSetupInfoDatabase, { getWifiSetupInfoDatabaseInstance } from "../db/WifiSetupInfoDatabase";
+import { getHomeWifiSetupDatabaseInstance } from "../db/HomeWifiSetupDatabase";
 
 let instance = null;
 
@@ -15,9 +16,13 @@ const getWifiManagerInstace = () => {
 class WifiManager {
 
   constructor() {
+    this._homeWifiSetupDB = getHomeWifiSetupDatabaseInstance();
     this._wifiSetupInfoDB = getWifiSetupInfoDatabaseInstance();
 
     // binding
+    this.connectToWifiNetwork = this.connectToWifiNetwork.bind(this);
+    this.disconnectFromWifiNetwork = this.disconnectFromWifiNetwork.bind(this);
+    this.getCurrentWifi = this.getCurrentWifi.bind(this);
     this.initialize = this.initialize.bind(this);
     this.startListening = this.startListening.bind(this);
     this.stopListening = this.stopListening.bind(this);
@@ -25,10 +30,88 @@ class WifiManager {
   }
 
   /**
+   * Connect to an Open (a Home Device's) Wifi network.
+   * @param {string} ssid the ssid of the network.
+   * @returns {Promise<void>}
+   */
+  connectToOpenWifiNetwork(ssid) {
+    return this.connectToWifiNetwork(ssid, undefined);
+  }
+
+  /**
+   * Connect to a Wifi network.
+   * @param {string} ssid the ssid of the network.
+   * @param {string} passphrase the passphrase to the network.
+   */
+  connectToWifiNetwork(ssid, passphrase) {
+    return this.disconnectFromWifiNetwork()
+    .then(wifi.connect((passphrase) ? { ssid, password: passphrase } : {ssid}));
+  }
+
+  /**
+   * Disconnect from the current Wifi network.
+   * @returns {Promise<void>}
+   */
+  disconnectFromWifiNetwork() {
+    return wifi.disconnect();
+  }
+
+  /**
+   * Find a Wifi object that this device is currently using by it's ssid.
+   * @param {string} ssid the ssid to search for.
+   */
+  findCurrentWifi(ssid) {
+    return this.getCurrentWifi()
+    .then(wifis => {
+      for (const wifi of wifis) {
+        if (wifi.ssid === ssid) return wifi;
+      }
+      return null;
+    });
+  }
+
+  /**
+   * Get the current Wifi connection(s).
+   * @returns {Promise<{ iface: string, ssid: string, bssid: string, mac: string, channel: number, frequency: number, signal_level: number, quality: number, security: string, security_flags: string, mode: string }[]>}
+   */
+  getCurrentWifi() {
+    return wifi.getCurrentConnections();
+  }
+
+  /**
+   * Get the current wifi network for Home.
+   * @returns {Promise<>} // TODO: type signature
+   */
+  getHomeWifi() {
+    return this._homeWifiSetupDB.get("0");
+  }
+
+  /**
    * Initialize the WifiManager.
    */
   initialize() {
     wifi.init({ iface: null });
+  }
+
+  /**
+   * Set the Wifi network to use as the Home wifi.
+   * @param {string} ssid the ssid.
+   * @param {string} passphrase the passphrase.
+   * @returns {Promise<void>}
+   */
+  setHomeWifi(ssid, passphrase) {
+    return this.findCurrentWifi(ssid)
+    .then(wifiInfo => {
+      if (wifiInfo == null) return null;
+      this._homeWifiSetupDB.get("0")
+      .then(wifiSetup => {
+        wifiSetup.ssid = wifiInfo.ssid;
+        wifiSetup.security = wifiInfo.security;
+        wifiSetup.passphrase = passphrase;
+        wifiSetup.timeLastUpdated = Date.now();
+        return this._homeWifiSetupDB.update(wifiSetup);
+      });
+    })
   }
 
   /**

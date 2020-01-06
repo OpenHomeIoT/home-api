@@ -7,15 +7,17 @@ function build() {
   return src("src/**/*.js")
   .pipe(babel())
   .pipe(inject.replace("process.env.NODE_ENV", '"production"'))
-  .pipe(dest("dist/"));
+  .pipe(dest("build/"));
 }
 
 function developBuild() {
-  return src("src/**/*.js")
+  return src("src/**/*.js", { base: "src" })
   .pipe(sourcemaps.init())
-  .pipe(babel())
-  .pipe(sourcemaps.write())
-  .pipe(dest("dist/"));
+  .pipe(babel({
+    presets: ["@babel/preset-env"],
+  }))
+  .pipe(sourcemaps.write(".", { includeContent: false, sourceRoot: "../src" }))
+  .pipe(dest("build/"));
 }
 
 

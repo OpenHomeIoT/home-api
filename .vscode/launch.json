@@ -5,13 +5,16 @@
       "type": "node",
       "request": "launch",
       "name": "Debug home-api",
-      "port": 9229,
+      "port": 9774,
       "skipFiles": [
         "<node_internals>/**"
       ],
+
+      "outFiles": ["${workspaceFolder}/build/**/*.js"],
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run-script", "debug"],
-      "preLaunchTask": "gulp: build:dev"
+      "preLaunchTask": "gulp: build:dev",
+      "sourceMaps": true
     }
   ]
 }

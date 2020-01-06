@@ -3,8 +3,11 @@ import { Router } from "express";
 import { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
 import { getDeviceDatabaseInstance } from "../db/DeviceDatabase";
 import { getWifiSetupInfoDatabaseInstance } from "../db/WifiSetupInfoDatabase";
+import { getWifiManagerInstace } from "../manager/WifiManager";
+import { getConnectionManagerInstance } from "../manager/device/ConnectionManager";
 
 const router = Router();
+const connectionManager = getConnectionManagerInstance();
 const externalDeviceDB = getExternalDeviceDatabaseInstance();
 const internalDeviceDB = getDeviceDatabaseInstance();
 const wifiSetupInfoDB = getWifiSetupInfoDatabaseInstance();
@@ -75,9 +78,25 @@ router.put("/internal", (req, res) => {
  * Get the internal devices that need to be configured to use
  * the Home Hub.
  */
-router.get("/configurable/", (req, res) => {
+router.get("/configurable", (req, res) => {
   wifiSetupInfoDB.getAll()
   .then(devicesToBeConfigured => res.json(devicesToBeConfigured))
+  .catch(err => res.status(400).json({ error: err }));
+});
+
+/**
+ * Connect to a device and configure it to connect to Home
+ */
+router.post("/configurable", (req, res) => {
+  const id = req.body["id"];
+  // TODO: verify id
+  wifiSetupInfoDB.get(id)
+  .then(deviceConnectionInfo => {
+    if (deviceConnectionInfo)
+      return connectionManager.configureDeviceForHome(deviceConnectionInfo);
+    res.status(400).json({ success: false, comment: "Device to be configured not found." });
+    return Promise.resolve();
+  })
   .catch(err => res.status(400).json({ error: err }));
 });
 

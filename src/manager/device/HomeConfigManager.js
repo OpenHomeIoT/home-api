@@ -1,4 +1,4 @@
-import ConnectionBufferDatabase, { getConnectionBufferDatabaseInstance } from "../db/ConnectionBufferDatabase";
+import ConnectionBufferDatabase, { getConnectionBufferDatabaseInstance } from "../../db/ConnectionBufferDatabase";
 import DeviceManager, { getDeviceManagerInstance } from "./DeviceManager";
 
 const ADDRESS = process.env.ADDRESS;
@@ -7,21 +7,16 @@ const PORT = process.env.PORT;
 let instance = null
 
 /**
- * @returns {ConnectionManager} the instance.
+ * @returns {HomeConfigManager} the instance.
  */
-const getConnectionManagerInstance = () => {
+const getHomeConfigManagerInstance = () => {
   if (instance == null) {
-    instance = new ConnectionManager(getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
+    instance = new HomeConfigManager(getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
   }
   return instance;
 }
 
-class ConnectionManager {
-
-
-  static getInstance() {
-
-  }
+class HomeConfigManager {
 
   /**
    *
@@ -69,11 +64,11 @@ class ConnectionManager {
   }
 
   /**
-   * Connect a device to this Hub.
+   * Connect a device to the Home.
    * @param {string} ipAddress the ip address of the device.
    * @returns {Promise<void>}
    */
-  _connectDeviceToHub(ipAddress) {
+  _connectDeviceToHome(ipAddress) {
     return new Promise((resolve, reject) => {
       const url = `http://${ipAddress}/config_parent`;
       const body = JSON.stringify({
@@ -106,7 +101,7 @@ class ConnectionManager {
    */
   _connectDevicesToHub(connectionInfos) {
     // TODO: filter connectionInfos for devices whose connectionStatus is not "reconnecting"
-    return Promise.all(map(({ ipAddress }) => this._connectDeviceToHub(ipAddress)));
+    return Promise.all(map(({ ipAddress }) => this._connectDeviceToHome(ipAddress)));
   }
 
   /**
@@ -121,5 +116,5 @@ class ConnectionManager {
   }
 }
 
-export default ConnectionManager;
-export { getConnectionManagerInstance };
+export default HomeConfigManager;
+export { getHomeConfigManagerInstance };
