@@ -1,25 +1,25 @@
 //@ts-check
 import { parseString } from "xml2js";
-import { Client as SSDPClient, Server as SSDPServer, SsdpHeaders } from "node-ssdp";
+import { Client as SSDPClient, SsdpHeaders } from "node-ssdp";
 import request from "request";
 
-import DeviceDatabase, { getDeviceDatabaseInstance }from "../db/DeviceDatabase";
-import ExternalDeviceDatabase, { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
+import { getDeviceDatabaseInstance }from "../db/DeviceDatabase";
+import { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
 import IoTDevice from "../model/IoTDevice";
 
 let instance = null;
 
 /**
- * Get the SSDPManager instance.
- * @returns {SsdpManager} the SSDPManager instance.
+ * Get the SsdpSearchManager instance.
+ * @returns {SsdpSearchManager} the SsdpSearchManager instance.
  */
-const getSsdpManagerInstance = () => {
+const getSsdpSearchManagerInstance = () => {
   if (instance == null)
-    instance = new SsdpManager();
+    instance = new SsdpSearchManager();
   return instance;
 }
 
-class SsdpManager {
+class SsdpSearchManager {
 
   constructor() {
     this._deviceDatabase = getDeviceDatabaseInstance();
@@ -30,16 +30,9 @@ class SsdpManager {
     this._ssdpClient = new SSDPClient();
     this._ssdpClient.on("response", (headers, statusCode, rInfo) => this._handleSSDPSearchResponse(headers, statusCode, rInfo));
 
-    this._ssdpServer = new SSDPServer();
-    this._ssdpServer.addUSN("urn:oshiot:device:hub:1-0");
-    this._ssdpServer.on("advertise-alive", (headers) => this._handleAdvertiseAlive(headers));
-    this._ssdpServer.on("advertise-bye", (headers) => this._handleAdvertiseBye(headers));
-
     this.startListening = this.startListening.bind(this);
     this.stopListening = this.stopListening.bind(this);
     this._handleResponse = this._handleSSDPSearchResponse.bind(this);
-    this._handleAdvertiseAlive = this._handleAdvertiseAlive.bind(this);
-    this._handleAdvertiseBye = this._handleAdvertiseBye.bind(this);
   }
 
   /**
@@ -49,7 +42,6 @@ class SsdpManager {
   startListening() {
     this._timer = setInterval(() => this._ssdpSearch(), 90000);
     this._ssdpSearch();
-    this._ssdpServer.start();
   }
 
   /**
@@ -58,27 +50,6 @@ class SsdpManager {
   stopListening() {
     if (this._timer) {
       clearInterval(this._timer);
-    }
-    this._ssdpServer.stop();
-  }
-
-  /**
-   *
-   * @param {SsdpHeaders} header the ssdp headers.
-   */
-  _handleAdvertiseAlive(header) {
-    if (header.ST && header.ST.indexOf("oshiot") !== -1) {
-      console.log(`[SSDPManager] Advertise Alive: ${JSON.stringify(header)}`);
-    }
-  }
-
-  /**
-   *
-   * @param {SsdpHeaders} header the ssdp headers.
-   */
-  _handleAdvertiseBye(header) {
-    if (header.ST && header.ST.indexOf("oshiot") !== -1) {
-      console.log(`[SSDPManager] Advertise Bye: ${JSON.stringify(header)}`);
     }
   }
 
@@ -128,7 +99,7 @@ class SsdpManager {
         } else {
           return this._updateExternalDevice(headers, rInfo);
         }
-      })
+      });
     }
 
   }
@@ -170,7 +141,7 @@ class SsdpManager {
    */
   _ssdpSearch() {
     // this._ssdpClient.search("urn:oshiot:device:wifi:1-0");
-    console.log("[SsdpManager] Searching for devices");
+    console.log("[SsdpSearchManager] Searching for devices");
     this._ssdpClient.search("ssdp:all");
   }
 
@@ -206,5 +177,5 @@ class SsdpManager {
   }
 }
 
-export default SsdpManager;
-export { getSsdpManagerInstance };
+export default SsdpSearchManager;
+export { getSsdpSearchManagerInstance };
