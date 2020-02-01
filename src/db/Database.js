@@ -124,6 +124,9 @@ class Database {
     return this.exists(data._id)
     .then(exists => {
       if (!exists) {
+        const now = Date.now();
+        data.recordCreated = now;
+        data.recordUpdated = now;
         this._getTable()
         .push(data)
         .write();
@@ -139,6 +142,8 @@ class Database {
    */
   update(data) {
     return new Promise((resolve, reject) => {
+      const now = Date.now();
+      data.recordUpdated = now;
       this._getTable()
       .find({ _id: data._id })
       .assign(data)
