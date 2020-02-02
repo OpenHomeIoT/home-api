@@ -84,7 +84,7 @@ class Database {
   exists(pk) {
     return this.get(pk)
     .then(record => record != null && record != undefined && record !== {})
-    .catch(err => false);
+    .catch(_ => false);
   }
 
   /**

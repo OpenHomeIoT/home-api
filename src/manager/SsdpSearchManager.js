@@ -41,7 +41,7 @@ class SsdpSearchManager {
    * Also start broadcasting own SSDP signature.
    */
   startListening() {
-    this._timer = setInterval(() => this._ssdpSearch(), 90000);
+    this._timer = setInterval(() => this._ssdpSearch(), 60000);
     this._ssdpSearch();
   }
 
@@ -54,8 +54,38 @@ class SsdpSearchManager {
     }
   }
 
+  _createOpenHomeIoTDevice(headers, rInfo, services) {
+    const { USN: usn, LOCATION: serviceDescriptionLocation } = headers;
+    const now = Date.now();
+    const iotDevice = {
+      _id: usn,
+      usn: usn,
+      room: "none",
+      ssdp: {
+        descriptionLocation: serviceDescriptionLocation,
+        ssdpPort: rInfo.port
+      },
+      network: {
+        addressFamily: rInfo.family,
+        ipAddress: rInfo.address
+      },
+      services,
+      serviceStatuses: services.map(service => ({ name: service.name, version: service.version, status: "unknown", updated: now })),
+      status: {
+        configuredForHub: false,
+        lastConfiguredForHub: 0,
+        connectedToHub: false,
+        lastConnectedToHub: 0,
+        socketID: "",
+        onlineOnNetwork: true,
+        lastSeenOnNetwork: now
+      }
+    };
+    return this._deviceDatabase.insert(iotDevice);
+  }
+
   /**
-   * Handle an SSDP search response that is originating from an 
+   * Handle an SSDP search response that is originating from an
    * OpenHomeIoT device.
    * @param {SsdpHeaders} headers the ssdp headers
    * @param {*} rInfo the remote info.
@@ -69,32 +99,7 @@ class SsdpSearchManager {
         if (!exists) {
           // load the services for the device
           this._loadServicesDescriptionForDevice(serviceDescriptionLocation)
-          .then(services => {
-            const iotDevice = {
-              _id: usn,
-              usn: usn,
-              room: "none",
-              ssdp: {
-                descriptionLocation: serviceDescriptionLocation,
-                ssdpPort: rInfo.port
-              },
-              network: {
-                addressFamily: rInfo.family,
-                ipAddress: rInfo.address
-              },
-              services,
-              serviceStatuses: services.map(service => ({ name: service.name, version: service.version, status: "unknown", updated: now })),
-              status: {
-                configuredForHub: false,
-                lastConfiguredForHub: 0,
-                connectedToHub: false,
-                lastConnectedToHub: 0,
-                onlineOnNetwork: true,
-                lastSeenOnNetwork: now
-              }
-            };
-            return this._deviceDatabase.insert(iotDevice);
-          });
+          .then(services => this._createOpenHomeIoTDevice(headers, rInfo, services));
         } else {
           return this._updateOpenHomeIoTDevice(headers, rInfo); // TODO: update services periodically
         }
@@ -102,8 +107,8 @@ class SsdpSearchManager {
   }
 
   /**
-   * Handle an SSDP search response that is originating from a 
-   * Roku device. 
+   * Handle an SSDP search response that is originating from a
+   * Roku device.
    * @param {SsdpHeaders} headers the ssdp headers
    * @param {*} rInfo the remote info .
    * @returns {Promise<void>}
@@ -140,7 +145,7 @@ class SsdpSearchManager {
   _handleSSDPSearchResponse(headers, _, rInfo) {
     const { ST: st } = headers;
     if (!st) return Promise.resolve();
-    
+
     return this._storeSsdpSearchResponse(headers, rInfo)
     .then(() => {
       if (st.indexOf("urn:OpenHomeIoT:device") !== -1) {
@@ -204,7 +209,7 @@ class SsdpSearchManager {
     return this._ssdpSearchResponseDB.get(id)
     .then(ssdpSearchResponse => {
       if (!ssdpSearchResponse) {
-        return this._ssdpSearchResponseDB.insert({ 
+        return this._ssdpSearchResponseDB.insert({
           _id: id,
           headers,
           rInfo
@@ -226,7 +231,7 @@ class SsdpSearchManager {
     const { USN: usn, LOCATION: location } = headers;
     const { address } = rInfo;
     const now = Date.now();
-    
+
     return this._deviceDatabase.get(usn)
     .then(device => {
       device.ssdp.descriptionLocation = location;

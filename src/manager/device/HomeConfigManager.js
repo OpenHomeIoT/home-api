@@ -26,6 +26,30 @@ class HomeConfigManager {
   }
 
   /**
+   * Connect a device to the Home Hub.
+   * @param {any} device the device. // TODO: device type
+   * @returns {Promise<void>}
+   */
+  configureDeviceForHub(device) {
+    // TODO: get ip address and port from database.
+    const request = {
+      uri: `http://${device.network.ipAddress}/config_parent`,
+      method: "POST",
+      body: {
+        parent: {
+          address: "homehubdev.local",
+          port: 30027
+        }
+      },
+      json: true
+    };
+    rp(request);
+    device.status.configuredForHub = true;
+    device.status.lastConfiguredForHub = Date.now();
+    return this._deviceDB.update(device);
+  }
+
+  /**
    * Start looking for devices to configure.
    */
   start() {
@@ -42,12 +66,14 @@ class HomeConfigManager {
   /**
    * Set that a device has connected to the hub.
    * @param {string} usn the device's usn.
+   * @param {string} socketID the socket id.
    */
-  setDeviceHasConnected(usn) {
+  setDeviceHasConnected(usn, socketID) {
     return this._deviceDB.get(usn)
     .then(iotDevice => {
       iotDevice.status.connectedToHub = true;
       iotDevice.status.lastConnectedToHub = Date.now();
+      iotDevice.status.socketID = socketID;
       return this._deviceDB.update(iotDevice);
     });
   }
@@ -62,6 +88,7 @@ class HomeConfigManager {
     .then(iotDevice => {
       iotDevice.status.connectedToHub = false;
       iotDevice.status.lastConnectedToHub = Date.now();
+      iotDevice.status.socketID = "";
       return this._deviceDB.update(iotDevice);
     });
   }
@@ -73,27 +100,7 @@ class HomeConfigManager {
    */
   _checkForDevicesToConfigure() {
     return this._deviceDB.getAllUnconfiguredForHub()
-    .then(unconfigured => Promise.all(unconfigured.map(device => this._configureDeviceForHub(device.network.ipAddress))));
-  }
-
-  /**
-   * Connect a device to the Home Hub.
-   * @param {string} ipAddress the ip address of the device.
-   * @returns {Promise<void>}
-   */
-  _configureDeviceForHub(ipAddress) {
-    const request = {
-      uri: `http://${ipAddress}/config_parent`,
-      body: JSON.stringify({
-        parent: {
-          address: ADDRESS,
-          port: PORT
-        }
-      }),
-      method: "POST"
-    };
-    return rp(request)
-    .then(body => {});
+    .then(unconfigured => Promise.all(unconfigured.map(device => this.configureDeviceForHub(device))));
   }
 }
 

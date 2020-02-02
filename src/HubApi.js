@@ -1,11 +1,15 @@
 import express from "express";
+import http from "http";
+import socketio from "socket.io";
 import bodyParser from "body-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import DeviceRoutes from "./routes/Device";
+import DeviceRoutes from "./routes/http/Device";
+import { onConnection } from "./routes/io/routes";
 import { getHomeConfigManagerInstance } from "./manager/device/HomeConfigManager";
 import { getSsdpSearchManagerInstance } from "./manager/SsdpSearchManager";
+import getConnectionManagerInstance from "./manager/device/ConnectionManager";
 
 class HubApi {
 
@@ -14,9 +18,12 @@ class HubApi {
    */
   constructor() {
     this._api = express();
-
     this._configureApi();
+    this._server = http.Server(this._api);
+    this._io = socketio(this._server);
+    this._configureSocketIO();
 
+    this._connectionManager = getConnectionManagerInstance();
     this._homeConfigManager = getHomeConfigManagerInstance();
     this._SsdpSearchManager = getSsdpSearchManagerInstance();
   }
@@ -28,9 +35,10 @@ class HubApi {
    */
   start(host, port) {
     return new Promise((resolve, reject) => {
-      this._server = this._api.listen(port, host, () => resolve());
+      this._connectionManager.start();
       this._homeConfigManager.start();
       this._SsdpSearchManager.startListening();
+      this._server.listen(port, host, resolve);
     });
   }
 
@@ -40,6 +48,7 @@ class HubApi {
    */
   stop() {
     return new Promise((resolve, reject) => {
+      this._connectionManager.stop();
       this._homeConfigManager.stop();
       this._SsdpSearchManager.stopListening();
       this._server.close(err => {
@@ -60,7 +69,15 @@ class HubApi {
     this._api.use("/device", DeviceRoutes);
     this._api.use((req, res, next) => {
       res.status(404).send("Not found.");
+      next();
     });
+  }
+
+  /**
+   * Configure Socket.IO
+   */
+  _configureSocketIO() {
+    this._io.on("connection", onConnection);
   }
 }
 

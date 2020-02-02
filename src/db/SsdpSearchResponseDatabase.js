@@ -16,6 +16,7 @@ class SsdpSearchResponseDatabase extends Database {
   /**
    * SsdpSearchResponseDatabase.
    * Stores SSDP search response data.
+   *
    * {
    *   _id: string,
    *   headers: object,
