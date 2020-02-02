@@ -11,7 +11,7 @@ task("clean", function(done) {
 task("clean:db", db.cleanDatabases);
 task("build:dev", series("clean", db.makeDBDirectory, build.developBuild));
 task("build:prod", series("clean", db.makeDBDirectory, build.build));
-task("start:debug", series("build:dev", function(done) {
+task("debug", series("build:dev", function(done) {
   nodemon({
     script: "./build/index.js",
     nodeArgs: ["--inspect-brk=9774"],
