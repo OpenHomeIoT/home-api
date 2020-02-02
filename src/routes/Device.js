@@ -3,11 +3,8 @@ import { Router } from "express";
 import { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
 import { getDeviceDatabaseInstance } from "../db/DeviceDatabase";
 import { getWifiSetupInfoDatabaseInstance } from "../db/WifiSetupInfoDatabase";
-import { getWifiManagerInstace } from "../manager/WifiManager";
-import { getConnectionManagerInstance } from "../manager/device/ConnectionManager";
 
 const router = Router();
-const connectionManager = getConnectionManagerInstance();
 const externalDeviceDB = getExternalDeviceDatabaseInstance();
 const internalDeviceDB = getDeviceDatabaseInstance();
 const wifiSetupInfoDB = getWifiSetupInfoDatabaseInstance();
