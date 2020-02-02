@@ -5,7 +5,7 @@ import request from "request";
 
 import { getDeviceDatabaseInstance }from "../db/DeviceDatabase";
 import { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
-import IoTDevice from "../model/IoTDevice";
+import getSsdpSearchResponseDatabaseInstance from "../db/SsdpSearchResponseDatabase";
 
 let instance = null;
 
@@ -24,6 +24,7 @@ class SsdpSearchManager {
   constructor() {
     this._deviceDatabase = getDeviceDatabaseInstance();
     this._externalDeviceDatabase = getExternalDeviceDatabaseInstance();
+    this._ssdpSearchResponseDB = getSsdpSearchResponseDatabaseInstance();
 
     this._timer = null;
 
@@ -54,60 +55,106 @@ class SsdpSearchManager {
   }
 
   /**
-   *
-   * @param {SsdpHeaders} headers the SsdpHeaders.
-   * @param {*} _ unused
-   * @param {*} rInfo the remote information
+   * Handle an SSDP search response that is originating from an 
+   * OpenHomeIoT device.
+   * @param {SsdpHeaders} headers the ssdp headers
+   * @param {*} rInfo the remote info.
+   * @returns {Promise<void>}
    */
-  _handleSSDPSearchResponse(headers, _, rInfo) {
-    if (!headers.ST) return;
-    if (headers.ST === "urn:oshiot:device:hub:1-0") return;
-
-    const usn = headers.USN;
-    const st = headers.ST;
+  _handleOpenHomeIoTDeviceResponse(headers, rInfo) {
+    const { USN: usn, LOCATION: serviceDescriptionLocation } = headers;
     const now = Date.now();
-
-    if (st.indexOf("urn:oshiot:device") !== -1) {
-      this._deviceDatabase.exists(usn)
+    return this._deviceDatabase.exists(usn)
       .then(exists => {
         if (!exists) {
           // load the services for the device
-          const serviceDescriptionLocation = headers.LOCATION;
           this._loadServicesDescriptionForDevice(serviceDescriptionLocation)
           .then(services => {
-            const iotDevice = new IoTDevice(headers.USN, serviceDescriptionLocation, rInfo.address, services, false, now, now, "disconnected");
-            return this._deviceDatabase.insert(iotDevice.toJson());
+            const iotDevice = {
+              _id: usn,
+              usn: usn,
+              room: "none",
+              ssdp: {
+                descriptionLocation: serviceDescriptionLocation,
+                ssdpPort: rInfo.port
+              },
+              network: {
+                addressFamily: rInfo.family,
+                ipAddress: rInfo.address
+              },
+              services,
+              serviceStatuses: services.map(service => ({ name: service.name, version: service.version, status: "unknown", updated: now })),
+              status: {
+                configuredForHub: false,
+                lastConfiguredForHub: 0,
+                connectedToHub: false,
+                lastConnectedToHub: 0,
+                onlineOnNetwork: true,
+                lastSeenOnNetwork: now
+              }
+            };
+            return this._deviceDatabase.insert(iotDevice);
           });
         } else {
-          return this._updateDevice(headers, rInfo); // TODO: update services periodically
+          return this._updateOpenHomeIoTDevice(headers, rInfo); // TODO: update services periodically
         }
       });
-    } else if (st.indexOf("roku") !== -1) {
-      this._externalDeviceDatabase.exists(usn)
-      .then(exists => {
-        if (!exists) {
-          return this._externalDeviceDatabase.insert({
-            _id: usn,
-            usn: usn,
-            ssdpDescriptionLocation: headers.LOCATION,
-            ipAddress: rInfo.address,
-            timeDiscovered: now,
-            timeLastSeen: now,
-            company: "Roku",
-            deviceType: "Roku"
-          });
-        } else {
-          return this._updateExternalDevice(headers, rInfo);
-        }
-      });
-    }
+  }
 
+  /**
+   * Handle an SSDP search response that is originating from a 
+   * Roku device. 
+   * @param {SsdpHeaders} headers the ssdp headers
+   * @param {*} rInfo the remote info .
+   * @returns {Promise<void>}
+   */
+  _handleRokuDeviceResponse(headers, rInfo) {
+    const { USN: usn, LOCATION: location } = headers;
+    const now = Date.now();
+    return this._externalDeviceDatabase.exists(usn)
+    .then(exists => {
+      if (!exists) {
+        return this._externalDeviceDatabase.insert({
+          _id: usn,
+          usn: usn,
+          ssdpDescriptionLocation: location,
+          ipAddress: rInfo.address,
+          timeDiscovered: now,
+          timeLastSeen: now,
+          company: "Roku",
+          deviceType: "Roku"
+        });
+      } else {
+        return this._updateExternalDevice(headers, rInfo);
+      }
+    });
+  }
+
+  /**
+   * Handle an SSDP search response.
+   * @param {SsdpHeaders} headers the SsdpHeaders.
+   * @param {*} _ unused
+   * @param {*} rInfo the remote information
+   * @returns {Promise<void>}
+   */
+  _handleSSDPSearchResponse(headers, _, rInfo) {
+    const { ST: st } = headers;
+    if (!st) return Promise.resolve();
+    
+    return this._storeSsdpSearchResponse(headers, rInfo)
+    .then(() => {
+      if (st.indexOf("urn:OpenHomeIoT:device") !== -1) {
+        return this._handleOpenHomeIoTDeviceResponse(headers, rInfo);
+      } else if (st.indexOf("roku") !== -1) {
+        return this._handleRokuDeviceResponse(headers, rInfo);
+      }
+    });
   }
 
   /**
    *
    * @param {string} servicesLocation the http url to the description of services.
-   * @returns {Promise<string[]>} a promise returning an array of services.
+   * @returns {Promise<{ name: string, version: string }[]>} a promise returning an array of services.
    */
   _loadServicesDescriptionForDevice(servicesLocation) {
     return new Promise((resolve, reject) => {
@@ -127,7 +174,8 @@ class SsdpSearchManager {
           for (let i = 0; i < result.root.device[0].serviceList.length; i++) {
             const service = result.root.device[0].serviceList[i].service;
             const serviceType = service[0].serviceType[0];
-            services.push(serviceType);
+            const serviceID = service[0].serviceId[0];
+            services.push({ name: serviceType, version: serviceID });
           }
 
           resolve(services);
@@ -146,15 +194,43 @@ class SsdpSearchManager {
   }
 
   /**
+   * Store a SSDP search response.
+   * @param {SsdpHeaders} headers the ssdp headers.
+   * @param {*} rInfo the remote info.
+   * @returns {Promise<void>}
+   */
+  _storeSsdpSearchResponse(headers, rInfo) {
+    const id = `${rInfo.address}${headers.USN}`;
+    return this._ssdpSearchResponseDB.get(id)
+    .then(ssdpSearchResponse => {
+      if (!ssdpSearchResponse) {
+        return this._ssdpSearchResponseDB.insert({ 
+          _id: id,
+          headers,
+          rInfo
+        });
+      } else {
+        ssdpSearchResponse.headers = headers;
+        ssdpSearchResponse.rInfo = rInfo;
+        return this._ssdpSearchResponseDB.update(ssdpSearchResponse);
+      }
+    });
+  }
+
+  /**
    * Update a device in the database.
    * @param {SsdpHeaders} headers the ssdp headers.
    * @param {*} rInfo the remote info
    */
-  _updateDevice(headers, rInfo) {
+  _updateOpenHomeIoTDevice(headers, rInfo) {
+    const { USN: usn, LOCATION: location } = headers;
+    const { address } = rInfo;
     const now = Date.now();
-
-    return this._deviceDatabase.get(headers.USN)
+    
+    return this._deviceDatabase.get(usn)
     .then(device => {
+      device.ssdp.descriptionLocation = location;
+      device.network.ipAddress = address;
       device.timeLastSeen = now;
       return this._deviceDatabase.update(device);
     });
@@ -164,6 +240,7 @@ class SsdpSearchManager {
    * Update an external device in the database.
    * @param {SsdpHeaders} headers the headers.
    * @param {*} rInfo the remote info.
+   * @returns {Promise<void>}
    */
   _updateExternalDevice(headers, rInfo) {
     const now = Date.now();
