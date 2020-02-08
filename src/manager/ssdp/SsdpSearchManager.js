@@ -1,11 +1,12 @@
 //@ts-check
 import { parseString } from "xml2js";
 import { Client as SSDPClient, SsdpHeaders } from "node-ssdp";
+import rp from "request-promise";
 import request from "request";
 
-import { getDeviceDatabaseInstance }from "../db/DeviceDatabase";
-import { getExternalDeviceDatabaseInstance } from "../db/ExternalDeviceDatabase";
-import getSsdpSearchResponseDatabaseInstance from "../db/SsdpSearchResponseDatabase";
+import { getDeviceDatabaseInstance }from "../../db/DeviceDatabase";
+import { getExternalDeviceDatabaseInstance } from "../../db/ExternalDeviceDatabase";
+import getSsdpSearchResponseDatabaseInstance from "../../db/SsdpSearchResponseDatabase";
 
 let instance = null;
 
@@ -54,6 +55,12 @@ class SsdpSearchManager {
     }
   }
 
+  /**
+   *
+   * @param {SsdpHeaders} headers the SSDP headers.
+   * @param {*} rInfo the remote info.
+   * @param {{ name: string, version: string }[]} services the services for the device.
+   */
   _createOpenHomeIoTDevice(headers, rInfo, services) {
     const { USN: usn, LOCATION: serviceDescriptionLocation } = headers;
     const now = Date.now();
@@ -61,6 +68,7 @@ class SsdpSearchManager {
       _id: usn,
       usn: usn,
       room: "none",
+      name: "",
       ssdp: {
         descriptionLocation: serviceDescriptionLocation,
         ssdpPort: rInfo.port
@@ -81,7 +89,11 @@ class SsdpSearchManager {
         lastSeenOnNetwork: now
       }
     };
-    return this._deviceDatabase.insert(iotDevice);
+    return this._loadDeviceName(iotDevice.ssdp.descriptionLocation)
+    .then(deviceName => {
+      iotDevice.name = deviceName;
+      return this._deviceDatabase.insert(iotDevice);
+    });
   }
 
   /**
@@ -154,6 +166,27 @@ class SsdpSearchManager {
         return this._handleRokuDeviceResponse(headers, rInfo);
       }
     });
+  }
+
+  /**
+   * Load the device's name.
+   * @param {string} ssdpDescriptionLocation the ssdp description url.
+   * @returns {Promise<string>}
+   */
+  _loadDeviceName(ssdpDescriptionLocation) {
+    const requestOptions = {
+      uri: ssdpDescriptionLocation,
+      method: "GET"
+    };
+    return rp(requestOptions)
+    .then(body => {
+      return new Promise((resolve, reject) => {
+        parseString(body, (parseErr, result) => {
+          if (parseErr) reject(parseErr);
+          else resolve(result.root.device[0].friendlyName[0]);
+        });
+      })
+    })
   }
 
   /**
@@ -248,8 +281,6 @@ class SsdpSearchManager {
    * @returns {Promise<void>}
    */
   _updateExternalDevice(headers, rInfo) {
-    const now = Date.now();
-
     return this._externalDeviceDatabase.get(headers.USN)
     .then(externalDevice => {
       externalDevice.ipAddress = rInfo.address;
