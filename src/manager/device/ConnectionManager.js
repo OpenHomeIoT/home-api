@@ -43,12 +43,13 @@ class ConnectionManager {
 
   /**
    * Make sure that all devices that are supposed to be connected are.
+   * @returns {Promise<void[]>}
    */
   _makeSureAllDevicesAreConnected() {
     this._deviceDB.getAll()
     .then(iotDevices => {
       return Promise.all(iotDevices.map(iotDevice => {
-        if (!iotDevice.status.connectedToHub && iotDevice.status.configuredFofHub) {
+        if (!iotDevice.status.connectedToHub && iotDevice.status.configuredForHub) {
           return this._homeConfigManager.configureDeviceForHub(iotDevice);
         } else if (iotDevice.status.connectedToHub) {
           return this._socketConnectionDB.isDeviceConnected(iotDevice.usn)
