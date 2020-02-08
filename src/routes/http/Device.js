@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import DeviceValidator from "../../validator/DeviceValidator";
 import { getExternalDeviceDatabaseInstance } from "../../db/ExternalDeviceDatabase";
 import { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
 
@@ -63,7 +64,7 @@ router.get("/OpenHomeIoT/:usn", (req, res) => {
  */
 router.put("/OpenHomeIoT", (req, res) => {
   const device = req.body;
-  // TODO: verify device
+  if (!DeviceValidator.isValidOpenHomeIoTDevice(device))
   internalDeviceDB.update(device)
   .then(() => res.json(device))
   .catch(err => res.status(400).json({ error: err }));
