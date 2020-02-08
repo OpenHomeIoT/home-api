@@ -5,10 +5,11 @@ import bodyParser from "body-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import AutomationRoutes from "./routes/http/Automations";
 import DeviceRoutes from "./routes/http/Device";
 import { onConnection } from "./routes/io/routes";
 import { getHomeConfigManagerInstance } from "./manager/device/HomeConfigManager";
-import { getSsdpSearchManagerInstance } from "./manager/SsdpSearchManager";
+import { getSsdpSearchManagerInstance } from "./manager/ssdp/SsdpSearchManager";
 import getConnectionManagerInstance from "./manager/device/ConnectionManager";
 
 class HubApi {
@@ -65,9 +66,17 @@ class HubApi {
     this._api.use(helmet());
     this._api.use(morgan("dev"));
     this._api.use(bodyParser.json());
-
-    this._api.use("/device", DeviceRoutes);
     this._api.use((req, res, next) => {
+      // set the Access-Control-Allow-Origin header to *
+      res.setHeader("Access-Control-Allow-Origin", "*"); // TODO: probably don't do this. security issues ya fool
+      next();
+    });
+
+    // setup routes
+    this._api.use("/automation", AutomationRoutes);
+    this._api.use("/device", DeviceRoutes);
+
+    this._api.use((_, res, next) => {
       res.status(404).send("Not found.");
       next();
     });
