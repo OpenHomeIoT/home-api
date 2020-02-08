@@ -36,17 +36,18 @@ class HomeConfigManager {
       uri: `http://${device.network.ipAddress}/config_parent`,
       method: "POST",
       body: {
-        parent: {
-          address: "homehubdev.local",
-          port: 30027
-        }
+        parentHost: "homehubdev.local",
+        parentPort: 30027
       },
       json: true
     };
-    rp(request);
-    device.status.configuredForHub = true;
-    device.status.lastConfiguredForHub = Date.now();
-    return this._deviceDB.update(device);
+    return rp(request)
+    .then(_ => {
+      device.status.configuredForHub = true;
+      device.status.lastConfiguredForHub = Date.now();
+      return this._deviceDB.update(device);
+    })
+    .catch(err => {});
   }
 
   /**
