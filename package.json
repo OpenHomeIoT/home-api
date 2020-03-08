@@ -2,10 +2,11 @@
   "name": "hub-api",
   "version": "0.0.1",
   "description": "Home hub api",
-  "main": "build/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "debug": "node --nolazy --inspect-brk=9774 build/index.js",
-    "start": "gulp build:prod && node build/index.js"
+    "build": "babel src --out-dir dist",
+    "debug": "node --nolazy --inspect-brk=9774 dist/index.js",
+    "start": "npm run build && node dist/index.js"
   },
   "repository": {
     "type": "git",
