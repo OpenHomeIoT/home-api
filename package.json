@@ -2,12 +2,11 @@
   "name": "hub-api",
   "version": "0.0.1",
   "description": "Home hub api",
-  "main": "build/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
-    "debug": "node --nolazy --inspect-brk=9774 build/index.js",
-    "start": "npm run build && node bukld/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "debug": "node --nolazy --inspect-brk=9774 dist/index.js",
+    "start": "npm run build && node dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -38,6 +37,7 @@
     "gulp-babel": "8.0.0",
     "gulp-inject-string": "1.1.2",
     "gulp-sourcemaps": "2.6.5",
+    "nodemon": "2.0.2",
     "rimraf": "3.0.0"
   }
 }
