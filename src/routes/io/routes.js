@@ -14,12 +14,13 @@ function onConnection(socket) {
   socket.on("disconnect", function () {
     if (socketConnectionDB.exists(socket.id)) {
       socketConnectionDB.get(socket.id)
-      .then(({ usn }) => homeConfigManager.setDeviceHasDisconnected(usn))
+      .then((socketConnection) => socketConnection && homeConfigManager.setDeviceHasDisconnected(socketConnection.usn))
       .then(() => socketConnectionDB.delete(socket.id));
     }
   });
 
   socket.emit("identification");
+  // TODO: load service routes serviceRoutes.apply(socket)
   setTimeout(function() {
     if (!socketConnectionDB.exists(socket.id)) {
       socket.disconnect();

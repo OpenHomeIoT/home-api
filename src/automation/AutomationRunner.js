@@ -1,4 +1,4 @@
-import getGmailTextServiceInstance, { GMAIL_TEXT_SERVICE } from "../service/actor/GmailTextService";
+import getGmailTextServiceInstance, { GMAIL_TEXT_SERVICE } from "../service/GmailService";
 
 let instance = null;
 

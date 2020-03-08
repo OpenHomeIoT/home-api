@@ -1,7 +1,6 @@
 import { Router } from "express";
-import { getAutomationDBInstance } from "../../db/AutomationDB";
+import getAutomationDBInstance from "../../db/AutomationDB";
 import AutomationValidator from "../../validator/AutomationValidator";
-import { resolveContent } from "nodemailer/lib/shared";
 
 const router = Router();
 const automationDB = getAutomationDBInstance();
@@ -69,3 +68,5 @@ router.delete("/:id", (req, res) => {
     return automationDB.delete(id);
   });
 });
+
+export default router;

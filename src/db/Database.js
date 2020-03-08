@@ -27,11 +27,19 @@ class Database {
 
     this._tableDefinition = tableDefinition;
 
-    // TODO: implement ledger
-
     // binding
-    this._initialize = this._initialize.bind(this);
     this.close = this.close.bind(this);
+    this.count = this.count.bind(this);
+    this.delete = this.delete.bind(this);
+    this.exists = this.exists.bind(this);
+    this.get = this.get.bind(this);
+    this.getAll = this.getAll.bind(this);
+    this.insert = this.insert.bind(this);
+    this.update = this.update.bind(this);
+
+    this._decreaseRecordCount = this._decreaseRecordCount.bind(this);
+    this._getTable = this._getTable.bind(this);
+    this._increaseRecordCount = this._increaseRecordCount.bind(this);
 
     this._initialize();
   }
