@@ -16,7 +16,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "express": "4.17.1",
-    "helmet": "3.21.2",
+    "helmet": "3.21.3",
     "lowdb": "1.0.0",
     "morgan": "1.9.1",
     "node-ssdp": "4.0.0",
