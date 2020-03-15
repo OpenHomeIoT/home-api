@@ -38,6 +38,6 @@
     "gulp-inject-string": "1.1.2",
     "gulp-sourcemaps": "2.6.5",
     "nodemon": "2.0.2",
-    "rimraf": "3.0.0"
+    "rimraf": "3.0.2"
   }
 }
