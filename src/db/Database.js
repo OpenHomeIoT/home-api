@@ -7,33 +7,39 @@ class Database {
 
   /**
    * Database constructor.
-   * @param {{ name: string, isLedger?: boolean, fields: { name: string, type: string, required?: boolean }[] }} tableDefinition the definition for the database table.
-   * @param {{ isMemoryDB?: boolean, isTest?: boolean }} options the options.
+   * @param {{ name: string, isLedger?: boolean, isMemory?: boolean }} tableDefinition the definition for the database table.
+   * @param {{ isTest?: boolean }} options the options.
    */
   constructor(tableDefinition, options) {
-    const { isMemoryDB = false } = options;
+    const { name, isMemory } = tableDefinition;
+    const { isTest } = options; // TODO: implement
 
-    if (isMemoryDB) this._adapter = new Memory();
+    if (!isTest && isMemory) this._adapter = new Memory();
     else this._adapter = new FileSync(`.db/${tableDefinition.name}.db.json`);
 
     this._db = new lowdb(this._adapter);
-    const tableName = tableDefinition.name;
-    const tableCount = `${tableName}Count`;
-    let defs = {};
-    defs[tableName] = [];
-    defs[tableCount] = 0;
-
-    this._db.defaults(defs)
+    const tableCount = `${name}Count`;
+    let tableDefaults = {};
+    tableDefaults[name] = [];
+    tableDefaults[tableCount] = 0;
+    this._db.defaults(tableDefaults)
     .write();
 
     this._tableDefinition = tableDefinition;
-    this._options = options || {};
-
-    // TODO: implement ledger
 
     // binding
-    this._initialize = this._initialize.bind(this);
     this.close = this.close.bind(this);
+    this.count = this.count.bind(this);
+    this.delete = this.delete.bind(this);
+    this.exists = this.exists.bind(this);
+    this.get = this.get.bind(this);
+    this.getAll = this.getAll.bind(this);
+    this.insert = this.insert.bind(this);
+    this.update = this.update.bind(this);
+
+    this._decreaseRecordCount = this._decreaseRecordCount.bind(this);
+    this._getTable = this._getTable.bind(this);
+    this._increaseRecordCount = this._increaseRecordCount.bind(this);
 
     this._initialize();
   }
@@ -65,7 +71,9 @@ class Database {
    * @returns {Promise<void>}
    */
   delete(pk) {
-    return new Promise((resolve, reject) => {
+    const { name, isLedger } = this._tableDefinition;
+    if (isLedger) return Promise.reject(`Table ${name} is a ledger table. You cannot delete from a ledger table.`);
+    return new Promise((resolve, _) => {
       this._getTable()
       .remove({ _id: pk })
       .write();
@@ -84,7 +92,7 @@ class Database {
   exists(pk) {
     return this.get(pk)
     .then(record => record != null && record != undefined && record !== {})
-    .catch(err => false);
+    .catch(_ => false);
   }
 
   /**
@@ -124,6 +132,9 @@ class Database {
     return this.exists(data._id)
     .then(exists => {
       if (!exists) {
+        const now = Date.now();
+        data.recordCreated = now;
+        data.recordUpdated = now;
         this._getTable()
         .push(data)
         .write();
@@ -138,7 +149,11 @@ class Database {
    * @returns {Promise<void>}
    */
   update(data) {
+    const { name, isLedger } = this._tableDefinition;
+    if (isLedger) return Promise.reject(`Table ${name} is a ledger table. You cannot update a ledger table.`);
     return new Promise((resolve, reject) => {
+      const now = Date.now();
+      data.recordUpdated = now;
       this._getTable()
       .find({ _id: data._id })
       .assign(data)

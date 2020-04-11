@@ -1,49 +1,67 @@
-import { post } from "../../http/JsonHttp";
-import { getWifiManagerInstace } from "../WifiManager";
-import { getHomeWifiSetupDatabaseInstance } from "../../db/HomeWifiSetupDatabase";
+import { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
+import getSocketConnectionDBInstance from "../../db/SocketConnectionDB";
+import { getHomeConfigManagerInstance } from "./HomeConfigManager";
 
 let instance = null;
 
 /**
  * Get the ConnectionManager instance.
- * @returns {ConnectionManager} the instance.
+ * The ConnectionManager makes sure that all devices are connected to the Hub.
+ * @returns {ConnectionManager}
  */
 const getConnectionManagerInstance = () => {
-  if (instance == null)
-    instance = new ConnectionManager();
+  if (instance == null) instance = new ConnectionManager();
   return instance;
 };
 
 class ConnectionManager {
 
   /**
-   * Create a new ConnectionManager.
+   * ConnectionManager.
+   *
    */
   constructor() {
-    this._homeWifiSetupDB = getHomeWifiSetupDatabaseInstance();
-    this._wifiManager = getWifiManagerInstace();
+    this._deviceDB = getDeviceDatabaseInstance();
+    this._socketConnectionDB = getSocketConnectionDBInstance();
+    this._homeConfigManager = getHomeConfigManagerInstance();
   }
 
   /**
-   * Configure an OpenHomeIoT Device to connect to the Home's wifi network.
-   * @param {{ _id: string, ssid: string, networkType: string, timeDiscovered: number, timeLastSeen: number }} wifiSetupInfo the wifi setup info.
+   * Start watching for disconnected devices.
    */
-  configureDeviceForHome(wifiSetupInfo) {
-    return this._homeWifiSetupDB.get("0")
-    .then(homeWifiSetup => {
-      const { ssid, passphrase } = homeWifiSetup;
-      let networkType = "open";
-      if (homeWifiSetup.security.startsWith("WPA2")) networkType = "wpa2";
-      else if (homeWifiSetup.security.startsWith("WPA")) networkType = "wpa";
+  start() {
+    this._connectionTimer = setInterval(() => this._makeSureAllDevicesAreConnected(), 10000);
+    this._makeSureAllDevicesAreConnected();
+  }
 
-      // TODO: encrypt http body
-      return this._wifiManager.connectToOpenWifiNetwork(wifiSetupInfo.ssid)
-      // TODO: wait until connected to wifi
-      .then(() => post("http://10.1.1.1/wifi", { networkType, ssid, passphrase }))
-      .finally(() => this._homeWifiSetupDB.get(this._wifiManager.connectToWifiNetwork(ssid, passphrase)));
+  /**
+   * Stop watching for disconnected devices.
+   */
+  stop() {
+    if (this._connectionTimer) clearInterval(this._connectionTimer);
+  }
+
+  /**
+   * Make sure that all devices that are supposed to be connected are.
+   * @returns {Promise<void[]>}
+   */
+  _makeSureAllDevicesAreConnected() {
+    this._deviceDB.getAll()
+    .then(iotDevices => {
+      return Promise.all(iotDevices.map(iotDevice => {
+        if (!iotDevice.status.connectedToHub && iotDevice.status.configuredForHub) {
+          return this._homeConfigManager.configureDeviceForHub(iotDevice);
+        } else if (iotDevice.status.connectedToHub) {
+          return this._socketConnectionDB.isDeviceConnected(iotDevice.usn)
+          .then(connected => {
+            if (!connected) {
+              return this._homeConfigManager.configureDeviceForHub(iotDevice);
+            }
+          });
+        }
+      }));
     })
   }
 }
 
-export default ConnectionManager;
-export { getConnectionManagerInstance };
+export default getConnectionManagerInstance;
