@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
+    "build:dev": "gulp build:dev",
+    "build:prod": "gulp build:prod",
     "debug": "node --nolazy --inspect-brk=9774 dist/index.js",
     "start": "npm run build && node dist/index.js"
   },
