@@ -22,7 +22,7 @@ task("debug", series("build:dev", function(done) {
     done: done
   });
 }));
-task("start", series("build:dev", function(done) {
+task("develop", series("build:dev", function(done) {
   nodemon({
     script: "./build/index.js",
     ext: 'js html css',
