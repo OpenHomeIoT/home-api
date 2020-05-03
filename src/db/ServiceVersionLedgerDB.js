@@ -3,15 +3,15 @@ import Database from "../../common/database/Database";
 let instance = null;
 
 /**
- * @returns {ServiceVersionLedgerDatabase}
+ * @returns {ServiceVersionLedgerDB}
  */
-const getServiceVersionLedgerDatabaseInstance = () => {
+const getServiceVersionLedgerDBInstance = () => {
   if (instance == null)
-    instance = new ServiceVersionLedgerDatabase();
+    instance = new ServiceVersionLedgerDB();
   return instance;
 }
 
-class ServiceVersionLedgerDatabase extends Database {
+class ServiceVersionLedgerDB extends Database {
 
   /**
    *
@@ -32,5 +32,5 @@ class ServiceVersionLedgerDatabase extends Database {
   };
 }
 
-export default ServiceVersionLedgerDatabase;
-export { ServiceVersionLedgerDatabase };
+export default ServiceVersionLedgerDB;
+export { ServiceVersionLedgerDB };

@@ -3,15 +3,15 @@ import Database from "../../common/database/Database";
 let instance = null;
 
 /**
- * @returns {ServiceLedgerDatabase}
+ * @returns {ServiceLedgerDB}
  */
-const getServiceLedgerDatabaseInstance = () => {
+const getServiceLedgerDBInstance = () => {
   if (instance == null)
-    instance = new ServiceLedgerDatabase();
+    instance = new ServiceLedgerDB();
   return instance;
 }
 
-class ServiceLedgerDatabase extends Database {
+class ServiceLedgerDB extends Database {
 
   /**
    *
@@ -34,5 +34,5 @@ class ServiceLedgerDatabase extends Database {
   }
 }
 
-export default ServiceLedgerDatabase;
-export { ServiceLedgerDatabase };
+export default ServiceLedgerDB;
+export { ServiceLedgerDB };

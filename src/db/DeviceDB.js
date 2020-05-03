@@ -3,15 +3,15 @@ import Database from "./Database";
 let instance = null;
 
 /**
- * @returns {DeviceDatabase}
+ * @returns {DeviceDB}
  */
-const getDeviceDatabaseInstance = () => {
+const getDeviceDBInstance = () => {
   if (instance == null)
-    instance = new DeviceDatabase({ });
+    instance = new DeviceDB({ });
   return instance;
 }
 
-class DeviceDatabase extends Database {
+class DeviceDB extends Database {
 
   /**
    * Device Database.
@@ -64,5 +64,5 @@ class DeviceDatabase extends Database {
   }
 }
 
-export default DeviceDatabase;
-export { getDeviceDatabaseInstance };
+export default DeviceDB;
+export { getDeviceDBInstance };

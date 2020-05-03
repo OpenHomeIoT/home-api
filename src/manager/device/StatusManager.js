@@ -1,12 +1,12 @@
 import ConnectionBufferDatabase, { getConnectionBufferDatabaseInstance } from "../../db/ConnectionBufferDatabase";
-import DeviceOnlineOfflineHistoryDatabase, { getDeviceOnlineOfflineHistoryDatabaseInstance } from "../../db/DeviceOnlineOfflineHistoryDatabase";
+import DeviceOnlineOfflineHistoryDB, { getDeviceOnlineOfflineHistoryDBInstance } from "../../db/DeviceOnlineOfflineHistoryDB";
 import DeviceManager, { getDeviceManagerInstance } from "./DeviceManager";
 
 let instance = null;
 
 const getStatusManagerInstance = () => {
   if (instance == null)
-    instance = new StatusManager(getDeviceOnlineOfflineHistoryDatabaseInstance(), getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
+    instance = new StatusManager(getDeviceOnlineOfflineHistoryDBInstance(), getConnectionBufferDatabaseInstance(), getDeviceManagerInstance());
   return instance;
 }
 
@@ -14,14 +14,14 @@ class StatusManager {
 
   /**
    *
-   * @param {DeviceOnlineOfflineHistoryDatabase} onlineOfflineHistoryDatabase `
+   * @param {DeviceOnlineOfflineHistoryDB} onlineOfflineHistoryDB `
    * @param {ConnectionBufferDatabase} reconnectionBufferDatabase
    * @param {DeviceManager} deviceManager
    */
-  constructor(onlineOfflineHistoryDatabase,
+  constructor(onlineOfflineHistoryDB,
               reconnectionBufferDatabase,
               deviceManager) {
-    this._onlineOfflineHistoryDatabase = onlineOfflineHistoryDatabase;
+    this._onlineOfflineHistoryDB = onlineOfflineHistoryDB;
     this._reconnectionBufferDatabase = reconnectionBufferDatabase;
     this._deviceManager = deviceManager;
 
@@ -82,7 +82,7 @@ class StatusManager {
       iotDevice.setOnline(isOnline);
       return this._deviceManager.updateDevice(iotDevice);
     })
-    .then(() => this._onlineOfflineHistoryDatabase.insert({ usn, time: Date.now(), isOnline }))
+    .then(() => this._onlineOfflineHistoryDB.insert({ usn, time: Date.now(), isOnline }))
     .then(() => (isOnline) ? this.setDeviceIsReconnecting(usn) : Promise.resolve());
   }
 }

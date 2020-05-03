@@ -3,15 +3,15 @@ import Database from "../../common/database/Database";
 let instance = null;
 
 /**
- * @returns {DeviceOnlineOfflineHistoryDatabase}
+ * @returns {DeviceOnlineOfflineHistoryDB}
  */
-const getDeviceOnlineOfflineHistoryDatabaseInstance = () => {
+const getDeviceOnlineOfflineHistoryDBInstance = () => {
   if (instance == null)
-    instance = new DeviceOnlineOfflineHistoryDatabase();
+    instance = new DeviceOnlineOfflineHistoryDB();
   return instance;
 }
 
-class DeviceOnlineOfflineHistoryDatabase extends Database {
+class DeviceOnlineOfflineHistoryDB extends Database {
 
   /**
    *
@@ -31,5 +31,5 @@ class DeviceOnlineOfflineHistoryDatabase extends Database {
   }
 }
 
-export default DeviceOnlineOfflineHistoryDatabase;
-export { DeviceOnlineOfflineHistoryDatabase };
+export default DeviceOnlineOfflineHistoryDB;
+export { DeviceOnlineOfflineHistoryDB };

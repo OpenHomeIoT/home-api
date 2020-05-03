@@ -4,9 +4,9 @@ import { Client as SSDPClient, SsdpHeaders } from "node-ssdp";
 import rp from "request-promise";
 import request from "request";
 
-import { getDeviceDatabaseInstance }from "../../db/DeviceDatabase";
-import { getExternalDeviceDatabaseInstance } from "../../db/ExternalDeviceDatabase";
-import getSsdpSearchResponseDatabaseInstance from "../../db/SsdpSearchResponseDatabase";
+import { getDeviceDBInstance }from "../../db/DeviceDB";
+import { getExternalDeviceDBInstance } from "../../db/ExternalDeviceDB";
+import getSsdpSearchResponseDBInstance from "../../db/SsdpSearchResponseDB";
 
 let instance = null;
 
@@ -23,9 +23,9 @@ const getSsdpSearchManagerInstance = () => {
 class SsdpSearchManager {
 
   constructor() {
-    this._deviceDatabase = getDeviceDatabaseInstance();
-    this._externalDeviceDatabase = getExternalDeviceDatabaseInstance();
-    this._ssdpSearchResponseDB = getSsdpSearchResponseDatabaseInstance();
+    this._deviceDatabase = getDeviceDBInstance();
+    this._externalDeviceDB = getExternalDeviceDBInstance();
+    this._ssdpSearchResponseDB = getSsdpSearchResponseDBInstance();
 
     this._timer = null;
 
@@ -128,10 +128,10 @@ class SsdpSearchManager {
   _handleRokuDeviceResponse(headers, rInfo) {
     const { USN: usn, LOCATION: location } = headers;
     const now = Date.now();
-    return this._externalDeviceDatabase.exists(usn)
+    return this._externalDeviceDB.exists(usn)
     .then(exists => {
       if (!exists) {
-        return this._externalDeviceDatabase.insert({
+        return this._externalDeviceDB.insert({
           _id: usn,
           usn: usn,
           ssdpDescriptionLocation: location,
@@ -281,11 +281,11 @@ class SsdpSearchManager {
    * @returns {Promise<void>}
    */
   _updateExternalDevice(headers, rInfo) {
-    return this._externalDeviceDatabase.get(headers.USN)
+    return this._externalDeviceDB.get(headers.USN)
     .then(externalDevice => {
       externalDevice.ipAddress = rInfo.address;
       externalDevice.ssdpDescriptionLocation = headers.LOCATION;
-      return this._externalDeviceDatabase.update(externalDevice);
+      return this._externalDeviceDB.update(externalDevice);
     });
   }
 }

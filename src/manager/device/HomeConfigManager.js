@@ -1,5 +1,5 @@
 import rp from "request-promise";
-import { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
+import { getDeviceDBInstance } from "../../db/DeviceDB";
 
 const ADDRESS = process.env.ADDRESS;
 const PORT = process.env.PORT;
@@ -11,15 +11,15 @@ let instance = null
  */
 const getHomeConfigManagerInstance = () => {
   if (instance == null) {
-    instance = new HomeConfigManager(getDeviceDatabaseInstance());
+    instance = new HomeConfigManager(getDeviceDBInstance());
   }
   return instance;
 }
 
 class HomeConfigManager {
 
-  constructor(deviceDatabase) {
-    this._deviceDB = deviceDatabase;
+  constructor(DeviceDB) {
+    this._deviceDB = DeviceDB;
 
     // TODO: binding
     this._checkForDevicesToConfigure = this._checkForDevicesToConfigure.bind(this);

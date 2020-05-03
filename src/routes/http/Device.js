@@ -1,12 +1,12 @@
 import { Router } from "express";
 
 import DeviceValidator from "../../validator/DeviceValidator";
-import { getExternalDeviceDatabaseInstance } from "../../db/ExternalDeviceDatabase";
-import { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
+import { getExternalDeviceDBInstance } from "../../db/ExternalDeviceDB";
+import { getDeviceDBInstance } from "../../db/DeviceDB";
 
 const router = Router();
-const externalDeviceDB = getExternalDeviceDatabaseInstance();
-const internalDeviceDB = getDeviceDatabaseInstance();
+const externalDeviceDB = getExternalDeviceDBInstance();
+const internalDeviceDB = getDeviceDBInstance();
 
 /**
  * Get the external devices.

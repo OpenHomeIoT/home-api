@@ -1,4 +1,4 @@
-import { getDeviceDatabaseInstance } from "../../db/DeviceDatabase";
+import { getDeviceDBInstance } from "../../db/DeviceDB";
 import getSocketConnectionDBInstance from "../../db/SocketConnectionDB";
 import { getHomeConfigManagerInstance } from "./HomeConfigManager";
 
@@ -21,7 +21,7 @@ class ConnectionManager {
    *
    */
   constructor() {
-    this._deviceDB = getDeviceDatabaseInstance();
+    this._deviceDB = getDeviceDBInstance();
     this._socketConnectionDB = getSocketConnectionDBInstance();
     this._homeConfigManager = getHomeConfigManagerInstance();
   }
