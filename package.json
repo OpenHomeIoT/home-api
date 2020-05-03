@@ -42,7 +42,7 @@
     "gulp": "4.0.2",
     "gulp-babel": "8.0.0",
     "gulp-inject-string": "1.1.2",
-    "gulp-nodemon": "2.4.2",
+    "gulp-nodemon": "2.5.0",
     "gulp-sourcemaps": "2.6.5",
     "nodemon": "2.0.2",
     "rimraf": "3.0.2"
