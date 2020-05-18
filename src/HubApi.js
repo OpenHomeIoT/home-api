@@ -78,6 +78,7 @@ class HubApi {
     this._api.use((req, res, next) => {
       // set the Access-Control-Allow-Origin header to *
       res.setHeader("Access-Control-Allow-Origin", "*"); // TODO: probably don't do this. security issues ya fool
+      res.setHeader("Access-Control-Allow-Headers", "*"); // TODO: probably don't do this. security issues ya fool
       next();
     });
 

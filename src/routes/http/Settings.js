@@ -13,7 +13,7 @@ router.get("/", (req, res) => {
   .catch(err => res.status(400).json({ error: err }));
 });
 
-router.put("/", (req, res) => {
+router.post("/", (req, res) => {
   const settings = req.body;
   // TODO: validate settings
   if (!settings) {
@@ -24,6 +24,8 @@ router.put("/", (req, res) => {
     res.status(400).json({ error: "'settings.network' is not defined." });
     return;
   }
+
+  settings._id = "_";
   settingsDB.update(settings)
   .then(() => res.status(200).json(settings))
   .catch(err => res.status(400).json({ error: err }));
