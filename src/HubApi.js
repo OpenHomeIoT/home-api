@@ -8,6 +8,7 @@ import morgan from "morgan";
 import AutomationRoutes from "./routes/http/Automations";
 import DeviceRoutes from "./routes/http/Device";
 import ServiceRoutes from "./routes/http/Service";
+import SettingsRoutes from "./routes/http/Settings";
 
 import { onConnection } from "./routes/io/routes";
 import { getHomeConfigManagerInstance } from "./manager/device/HomeConfigManager";
@@ -84,6 +85,7 @@ class HubApi {
     this._api.use("/automation", AutomationRoutes);
     this._api.use("/device", DeviceRoutes);
     this._api.use("/service", ServiceRoutes);
+    this._api.use("/settings", SettingsRoutes);
 
     this._api.use((_, res, next) => {
       res.status(404).send("Not found.");
